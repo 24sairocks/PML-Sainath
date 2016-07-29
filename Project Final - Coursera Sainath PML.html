@@ -1,0 +1,409 @@
+<html>
+<head>
+<style type="text/css">
+.knitr .inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+}
+.warning {
+	font-weight: bold;
+}
+.message {
+	font-style: italic;
+}
+.source, .output, .warning, .error, .message {
+	padding: 0 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f5f5f5;
+}
+.rimage .left {
+  text-align: left;
+}
+.rimage .right {
+  text-align: right;
+}
+.rimage .center {
+  text-align: center;
+}
+.hl.num {
+  color: #AF0F91;
+}
+.hl.str {
+  color: #317ECC;
+}
+.hl.com {
+  color: #AD95AF;
+  font-style: italic;
+}
+.hl.opt {
+  color: #000000;
+}
+.hl.std {
+  color: #585858;
+}
+.hl.kwa {
+  color: #295F94;
+  font-weight: bold;
+}
+.hl.kwb {
+  color: #B05A65;
+}
+.hl.kwc {
+  color: #55aa55;
+}
+.hl.kwd {
+  color: #BC5A65;
+  font-weight: bold;
+}
+</style>
+<title>Coursera:Sainath PML</title>
+</head>
+
+<body>
+<head>
+<p><h1>Coursera:Sainath PML</h1></p>
+</head>
+<p><h1>Load the training and testing data sets</h1></p>
+<div class="chunk" id="unnamed-chunk-1"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(caret)</span>
+</pre></div>
+<div class="message"><pre class="knitr r">## Loading required package: lattice
+</pre></div>
+<div class="message"><pre class="knitr r">## Loading required package: ggplot2
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(ISLR)</span>
+<span class="hl kwd">library</span><span class="hl std">(ggplot2)</span>
+<span class="hl kwd">library</span><span class="hl std">(Hmisc)</span>
+</pre></div>
+<div class="message"><pre class="knitr r">## Loading required package: survival
+</pre></div>
+<div class="message"><pre class="knitr r">## 
+## Attaching package: 'survival'
+</pre></div>
+<div class="message"><pre class="knitr r">## The following object is masked from 'package:caret':
+## 
+##     cluster
+</pre></div>
+<div class="message"><pre class="knitr r">## Loading required package: Formula
+</pre></div>
+<div class="message"><pre class="knitr r">## 
+## Attaching package: 'Hmisc'
+</pre></div>
+<div class="message"><pre class="knitr r">## The following objects are masked from 'package:base':
+## 
+##     format.pval, round.POSIXt, trunc.POSIXt, units
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(splines)</span>
+<span class="hl kwd">library</span><span class="hl std">(rpart)</span>
+</pre></div>
+</div></div>
+
+<div class="chunk" id="unnamed-chunk-2"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">setwd</span><span class="hl std">(</span><span class="hl str">&quot;C:/Users/IBM_ADMIN/Documents/Coursera/Practical Machine LEarning&quot;</span><span class="hl std">)</span>
+<span class="hl std">train</span> <span class="hl kwb">&lt;-</span><span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">&quot;pml-training.csv&quot;</span><span class="hl std">,</span><span class="hl kwc">header</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">)</span>
+<span class="hl std">test</span> <span class="hl kwb">&lt;-</span><span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">&quot;pml-testing.csv&quot;</span><span class="hl std">,</span><span class="hl kwc">header</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">)</span>
+<span class="hl kwd">dim</span><span class="hl std">(train)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 19622   160
+</pre></div>
+</div></div>
+
+<p><h1>Analyze the data set</h1>
+
+<h3>Based on initial look at the data the data has blanks , NA ,#DIV/0
+First step would be to cleanse the data
+Also at first glance the first 7 columns do not seem like the ones that would have effect on the prediction outcome .</h3> </p>
+
+<div class="chunk" id="unnamed-chunk-3"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">train</span> <span class="hl kwb">&lt;-</span><span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">&quot;pml-training.csv&quot;</span><span class="hl std">,</span><span class="hl kwc">header</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">,</span><span class="hl kwc">na.strings</span><span class="hl std">=</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;NA&quot;</span><span class="hl std">,</span><span class="hl str">&quot;#DIV/0!&quot;</span><span class="hl std">,</span><span class="hl str">&quot;&quot;</span><span class="hl std">))</span>
+<span class="hl std">test</span> <span class="hl kwb">&lt;-</span><span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">&quot;pml-testing.csv&quot;</span><span class="hl std">,</span><span class="hl kwc">header</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">,</span><span class="hl kwc">na.strings</span><span class="hl std">=</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;NA&quot;</span><span class="hl std">,</span><span class="hl str">&quot;#DIV/0!&quot;</span><span class="hl std">,</span><span class="hl str">&quot;&quot;</span><span class="hl std">))</span>
+<span class="hl std">train</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train[,</span><span class="hl num">8</span><span class="hl opt">:</span><span class="hl num">160</span><span class="hl std">]</span>
+</pre></div>
+</div></div>
+<p><h1>Identifying and removing near zero variance variables</h1></p>
+
+<div class="chunk" id="unnamed-chunk-4"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">train_var</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">nearZeroVar</span><span class="hl std">(train,</span> <span class="hl kwc">saveMetrics</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">)</span>
+<span class="hl std">train_var1</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train[,train_var</span><span class="hl opt">$</span><span class="hl std">nzv</span><span class="hl opt">==</span><span class="hl num">FALSE</span><span class="hl std">]</span>
+
+<span class="hl std">train_1</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train_var1</span>
+<span class="hl kwa">for</span><span class="hl std">(i</span> <span class="hl kwa">in</span> <span class="hl num">1</span><span class="hl opt">:</span><span class="hl kwd">length</span><span class="hl std">(train_var1)) {</span>
+  <span class="hl kwa">if</span><span class="hl std">(</span> <span class="hl kwd">sum</span><span class="hl std">(</span> <span class="hl kwd">is.na</span><span class="hl std">( train_var1[, i] ) )</span> <span class="hl opt">/</span><span class="hl kwd">nrow</span><span class="hl std">(train_var1)</span> <span class="hl opt">&gt;=</span> <span class="hl num">.6</span><span class="hl std">) {</span>
+    <span class="hl kwa">for</span><span class="hl std">(j</span> <span class="hl kwa">in</span> <span class="hl num">1</span><span class="hl opt">:</span><span class="hl kwd">length</span><span class="hl std">(train_1)) {</span>
+      <span class="hl kwa">if</span><span class="hl std">(</span> <span class="hl kwd">length</span><span class="hl std">(</span> <span class="hl kwd">grep</span><span class="hl std">(</span><span class="hl kwd">names</span><span class="hl std">(train_var1[i]),</span> <span class="hl kwd">names</span><span class="hl std">(train_1)[j]) )</span> <span class="hl opt">==</span> <span class="hl num">1</span><span class="hl std">)  {</span>
+        <span class="hl std">train_1</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train_1[ ,</span> <span class="hl opt">-</span><span class="hl std">j]</span>
+      <span class="hl std">}</span>
+    <span class="hl std">}</span>
+  <span class="hl std">}</span>
+<span class="hl std">}</span>
+<span class="hl std">train_var1</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train_1</span>
+<span class="hl kwd">rm</span><span class="hl std">(train_1)</span>
+<span class="hl kwd">dim</span><span class="hl std">(train_var1)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 19622    53
+</pre></div>
+</div></div>
+<p><h3>Applying the same transformations to the testing set as well
+#Since here we have removed the near zero variables and NA variables testing data should also have only these variables</h3>
+</p>
+<div class="chunk" id="unnamed-chunk-5"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">train_variables</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">colnames</span><span class="hl std">(train_var1)</span>
+<span class="hl std">train_variables_1</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">colnames</span><span class="hl std">(train_var1[,</span> <span class="hl opt">-</span><span class="hl num">53</span><span class="hl std">])</span>  <span class="hl com"># remove the classe column</span>
+<span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl std">test[train_variables_1]</span>
+<span class="hl kwd">dim</span><span class="hl std">(test)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 20 52
+</pre></div>
+</div></div>
+<p><h1>Partitioning the training data</h1></p>
+<div class="chunk" id="unnamed-chunk-6"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">intrain</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">createDataPartition</span><span class="hl std">(train_var1</span><span class="hl opt">$</span><span class="hl std">classe,</span> <span class="hl kwc">p</span><span class="hl std">=</span><span class="hl num">0.7</span><span class="hl std">,</span> <span class="hl kwc">list</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">)</span>
+<span class="hl std">train_fin</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train_var1[intrain, ]</span>
+<span class="hl std">valid_fin</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train_var1[</span><span class="hl opt">-</span><span class="hl std">intrain, ]</span>
+<span class="hl kwd">dim</span><span class="hl std">(train_fin)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 13737    53
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl kwd">dim</span><span class="hl std">(valid_fin)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 5885   53
+</pre></div>
+</div></div>
+
+
+<p><h1>Using basic classification tree algorithm to predict the classe</h1></p>
+<div class="chunk" id="unnamed-chunk-7"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">modfit</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">train</span><span class="hl std">(train_fin</span><span class="hl opt">$</span><span class="hl std">classe</span> <span class="hl opt">~</span> <span class="hl std">.,</span> <span class="hl kwc">data</span> <span class="hl std">= train_fin,</span> <span class="hl kwc">method</span><span class="hl std">=</span><span class="hl str">&quot;rpart&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">print</span><span class="hl std">(modfit)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## CART 
+## 
+## 13737 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## Summary of sample sizes: 13737, 13737, 13737, 13737, 13737, 13737, ... 
+## Resampling results across tuning parameters:
+## 
+##   cp          Accuracy   Kappa     
+##   0.02709117  0.5499497  0.42081522
+##   0.04298647  0.4610288  0.28480472
+##   0.11718035  0.3134578  0.04472701
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was cp = 0.02709117.
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">predict_1</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(modfit,</span> <span class="hl kwc">newdata</span><span class="hl std">=valid_fin)</span>
+<span class="hl kwd">print</span><span class="hl std">(</span><span class="hl kwd">confusionMatrix</span><span class="hl std">(predict_1,valid_fin</span><span class="hl opt">$</span><span class="hl std">classe))</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1058  203   22   68   15
+##          B  162  659   53  147  276
+##          C  351  236  806  505  269
+##          D  101   41  145  244   55
+##          E    2    0    0    0  467
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.5495          
+##                  95% CI : (0.5367, 0.5623)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.4342          
+##  Mcnemar's Test P-Value : &lt; 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.6320   0.5786   0.7856  0.25311  0.43161
+## Specificity            0.9269   0.8656   0.7199  0.93050  0.99958
+## Pos Pred Value         0.7745   0.5081   0.3719  0.41638  0.99574
+## Neg Pred Value         0.8637   0.8954   0.9408  0.86413  0.88645
+## Prevalence             0.2845   0.1935   0.1743  0.16381  0.18386
+## Detection Rate         0.1798   0.1120   0.1370  0.04146  0.07935
+## Detection Prevalence   0.2321   0.2204   0.3682  0.09958  0.07969
+## Balanced Accuracy      0.7794   0.7221   0.7527  0.59181  0.71560
+</pre></div>
+</div></div>
+<p><h3>the accuracy of the prediction deteriorated further less that 50% therefore this would not be a good model to predict</h3>
+#Do a check if preprocess ing the data will improve the prediction results</p>
+<div class="chunk" id="unnamed-chunk-8"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">modfit_1</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">train</span><span class="hl std">(train_fin</span><span class="hl opt">$</span><span class="hl std">classe</span> <span class="hl opt">~</span> <span class="hl std">.,</span> <span class="hl kwc">data</span> <span class="hl std">= train_fin,</span> <span class="hl kwc">method</span><span class="hl std">=</span><span class="hl str">&quot;rpart&quot;</span><span class="hl std">,</span> <span class="hl kwc">preProcess</span><span class="hl std">=</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;center&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;scale&quot;</span><span class="hl std">))</span>
+<span class="hl kwd">print</span><span class="hl std">(modfit_1)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## CART 
+## 
+## 13737 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## Pre-processing: centered (52), scaled (52) 
+## Resampling: Bootstrapped (25 reps) 
+## Summary of sample sizes: 13737, 13737, 13737, 13737, 13737, 13737, ... 
+## Resampling results across tuning parameters:
+## 
+##   cp          Accuracy   Kappa     
+##   0.02709117  0.5522877  0.42109859
+##   0.04298647  0.4580341  0.27892463
+##   0.11718035  0.3314436  0.07146557
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was cp = 0.02709117.
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">predict_1</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(modfit_1,</span> <span class="hl kwc">newdata</span><span class="hl std">=valid_fin)</span>
+<span class="hl kwd">print</span><span class="hl std">(</span><span class="hl kwd">confusionMatrix</span><span class="hl std">(predict_1,valid_fin</span><span class="hl opt">$</span><span class="hl std">classe))</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1058  203   22   68   15
+##          B  162  659   53  147  276
+##          C  351  236  806  505  269
+##          D  101   41  145  244   55
+##          E    2    0    0    0  467
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.5495          
+##                  95% CI : (0.5367, 0.5623)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.4342          
+##  Mcnemar's Test P-Value : &lt; 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.6320   0.5786   0.7856  0.25311  0.43161
+## Specificity            0.9269   0.8656   0.7199  0.93050  0.99958
+## Pos Pred Value         0.7745   0.5081   0.3719  0.41638  0.99574
+## Neg Pred Value         0.8637   0.8954   0.9408  0.86413  0.88645
+## Prevalence             0.2845   0.1935   0.1743  0.16381  0.18386
+## Detection Rate         0.1798   0.1120   0.1370  0.04146  0.07935
+## Detection Prevalence   0.2321   0.2204   0.3682  0.09958  0.07969
+## Balanced Accuracy      0.7794   0.7221   0.7527  0.59181  0.71560
+</pre></div>
+</div></div>
+<p><h4>Preprocessing does not improve the accruacy further therfore proceeding to use other algrithms to build the model</h4>
+<h1>Random forests  to be used to build further models</h1></p>
+
+
+<div class="chunk" id="unnamed-chunk-9"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl com">#Lines Commented for Kniting as RF take long time to process. Please see Original R code for details</span>
+
+<span class="hl com"># modfit_2 &lt;- train(train_fin$classe ~ ., data = train_fin, method=&quot;rf&quot;, preProcess=c(&quot;center&quot;, &quot;scale&quot;))</span>
+<span class="hl com"># print(modfit_2)</span>
+<span class="hl com"># predict_2 &lt;- predict(modfit_2, newdata=valid_fin)</span>
+<span class="hl com"># print(confusionMatrix(predict_2,valid_fin$classe))</span>
+
+<span class="hl com"># &gt; modfit_2 &lt;- train(train_fin$classe ~ ., data = train_fin, method=&quot;rf&quot;, preProcess=c(&quot;center&quot;, &quot;scale&quot;))</span>
+<span class="hl com"># &gt;</span>
+<span class="hl com">#   &gt; print(modfit_2)</span>
+<span class="hl com"># Random Forest</span>
+<span class="hl com">#</span>
+<span class="hl com"># 13737 samples</span>
+<span class="hl com"># 52 predictor</span>
+<span class="hl com"># 5 classes: 'A', 'B', 'C', 'D', 'E'</span>
+<span class="hl com">#</span>
+<span class="hl com"># Pre-processing: centered (52), scaled (52)</span>
+<span class="hl com"># Resampling: Bootstrapped (25 reps)</span>
+<span class="hl com"># Summary of sample sizes: 13737, 13737, 13737, 13737, 13737, 13737, ...</span>
+<span class="hl com"># Resampling results across tuning parameters:</span>
+<span class="hl com">#</span>
+<span class="hl com">#   mtry  Accuracy   Kappa</span>
+<span class="hl com"># 2    0.9881682  0.9850310</span>
+<span class="hl com"># 27    0.9887566  0.9857768</span>
+<span class="hl com"># 52    0.9811102  0.9761049</span>
+<span class="hl com">#</span>
+<span class="hl com"># Accuracy was used to select the optimal model using  the largest value.</span>
+<span class="hl com"># The final value used for the model was mtry = 27.</span>
+<span class="hl com"># &gt;</span>
+<span class="hl com">#   &gt; #Running the Model against the test class</span>
+<span class="hl com">#   &gt;</span>
+<span class="hl com">#   &gt; predict_2 &lt;- predict(modfit_2, newdata=valid_fin)</span>
+<span class="hl com"># &gt; print(confusionMatrix(predict_2,valid_fin$classe))</span>
+<span class="hl com"># Confusion Matrix and Statistics</span>
+<span class="hl com">#</span>
+<span class="hl com"># Reference</span>
+<span class="hl com"># Prediction    A    B    C    D    E</span>
+<span class="hl com"># A 1674   15    0    0    0</span>
+<span class="hl com"># B    0 1123    4    0    0</span>
+<span class="hl com"># C    0    1 1017    9    0</span>
+<span class="hl com"># D    0    0    5  955    0</span>
+<span class="hl com"># E    0    0    0    0 1082</span>
+<span class="hl com">#</span>
+<span class="hl com"># Overall Statistics</span>
+<span class="hl com">#</span>
+<span class="hl com"># Accuracy : 0.9942</span>
+<span class="hl com"># 95% CI : (0.9919, 0.996)</span>
+<span class="hl com"># No Information Rate : 0.2845</span>
+<span class="hl com"># P-Value [Acc &gt; NIR] : &lt; 2.2e-16</span>
+<span class="hl com">#</span>
+<span class="hl com"># Kappa : 0.9927</span>
+<span class="hl com"># Mcnemar's Test P-Value : NA</span>
+<span class="hl com">#</span>
+<span class="hl com"># Statistics by Class:</span>
+<span class="hl com">#</span>
+<span class="hl com"># Class: A Class: B Class: C Class: D Class: E</span>
+<span class="hl com"># Sensitivity            1.0000   0.9860   0.9912   0.9907   1.0000</span>
+<span class="hl com"># Specificity            0.9964   0.9992   0.9979   0.9990   1.0000</span>
+<span class="hl com"># Pos Pred Value         0.9911   0.9965   0.9903   0.9948   1.0000</span>
+<span class="hl com"># Neg Pred Value         1.0000   0.9966   0.9981   0.9982   1.0000</span>
+<span class="hl com"># Prevalence             0.2845   0.1935   0.1743   0.1638   0.1839</span>
+<span class="hl com"># Detection Rate         0.2845   0.1908   0.1728   0.1623   0.1839</span>
+<span class="hl com"># Detection Prevalence   0.2870   0.1915   0.1745   0.1631   0.1839</span>
+<span class="hl com"># Balanced Accuracy      0.9982   0.9926   0.9946   0.9948   1.0000</span>
+</pre></div>
+</div></div>
+<div class="chunk" id="unnamed-chunk-10"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl com">#print(plot(varImp(modfit_2, scale = FALSE)))</span>
+</pre></div>
+</div></div>
+
+<div class="chunk" id="unnamed-chunk-11"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl com">#Applying the model to the final test data for 20 cases</span>
+<span class="hl com"># Run against 20 testing set provided by Professor Leek.</span>
+<span class="hl com">#print(predict(modfit_2, newdata=test))</span>
+<span class="hl com"># [1] B A B A A E D B A A B C B A E E A B B B</span>
+<span class="hl com"># Levels: A B C D E</span>
+<span class="hl com">#</span>
+<span class="hl com">#FINAL OUTPUT FOR TEST CASE</span>
+
+<span class="hl com"># Results &lt;- data.frame(predicted=predict(modfit_2, newdata=test)</span>
+<span class="hl com"># )</span>
+<span class="hl com">#    predicted</span>
+<span class="hl com"># 1          B</span>
+<span class="hl com"># 2          A</span>
+<span class="hl com"># 3          B</span>
+<span class="hl com"># 4          A</span>
+<span class="hl com"># 5          A</span>
+<span class="hl com"># 6          E</span>
+<span class="hl com"># 7          D</span>
+<span class="hl com"># 8          B</span>
+<span class="hl com"># 9          A</span>
+<span class="hl com"># 10         A</span>
+<span class="hl com"># 11         B</span>
+<span class="hl com"># 12         C</span>
+<span class="hl com"># 13         B</span>
+<span class="hl com"># 14         A</span>
+<span class="hl com"># 15         E</span>
+<span class="hl com"># 16         E</span>
+<span class="hl com"># 17         A</span>
+<span class="hl com"># 18         B</span>
+<span class="hl com"># 19         B</span>
+<span class="hl com"># 20         B</span>
+</pre></div>
+</div></div>
+
+<p><h1>Conclusion:</h1>
+</h3>
+Based on the RF model the test cases have been predicted as above.The accuracy for the RF model is relatively higher and would certainly provide more accurate results
+Additional Analysis and further explanation:
+I would like to have done additional exploratory data analysis to reduce the number of predictors down further. PCA- Principal component analysis as well as using concepts from Regularized regression and combining predictor chapter.</h3>
+</p>
+
+</body>
+</html>
