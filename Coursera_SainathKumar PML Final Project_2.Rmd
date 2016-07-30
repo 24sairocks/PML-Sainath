@@ -2,7 +2,7 @@
 title: "PML Sainath Kumar"
 author: "Sai"
 date: "July 29, 2016"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
