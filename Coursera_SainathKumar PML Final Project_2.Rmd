@@ -1,0 +1,150 @@
+---
+title: "PML Sainath Kumar"
+author: "Sai"
+date: "July 29, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+ 
+
+ 
+```{r cars} 
+library(caret)
+library(ISLR)
+library(ggplot2)
+library(Hmisc)
+library(splines)
+library(rpart) 
+library(ElemStatLearn) 
+
+
+```
+Load the training and testing data sets
+
+
+```{r}
+setwd("C:/Users/IBM_ADMIN/Documents/Coursera/Practical Machine LEarning")
+train <-read.csv("pml-training.csv",header=TRUE)
+test <-read.csv("pml-testing.csv",header=TRUE)
+dim(train)
+```
+
+
+Analyze the data set
+
+Based on initial look at the data the data has blanks , NA ,#DIV/0
+First step would be to cleanse the data
+Also at first glance the first 7 columns do not seem like the ones that would have effect on the prediction outcome . 
+
+ 
+```{r}
+train <-read.csv("pml-training.csv",header=TRUE,na.strings=c("NA","#DIV/0!",""))
+test <-read.csv("pml-testing.csv",header=TRUE,na.strings=c("NA","#DIV/0!",""))
+train <- train[,8:160]
+```
+
+ 
+<h1>Identifying and removing near zero variance variables</h1>
+
+ 
+```{r}
+train_var <- nearZeroVar(train, saveMetrics=TRUE)
+train_var1 <- train[,train_var$nzv==FALSE]
+
+train_1 <- train_var1
+for(i in 1:length(train_var1)) {
+  if( sum( is.na( train_var1[, i] ) ) /nrow(train_var1) >= .6) {
+    for(j in 1:length(train_1)) {
+      if( length( grep(names(train_var1[i]), names(train_1)[j]) ) == 1)  {
+        train_1 <- train_1[ , -j]
+      }
+    }
+  }
+}
+train_var1 <- train_1
+rm(train_1)
+dim(train_var1)
+```
+
+ 
+#Applying the same transformations to the testing set as well
+#Since here we have removed the near zero variables and NA variables testing data should also have only these variables</h3>
+
+ 
+```{r}
+train_variables <- colnames(train_var1)
+train_variables_1 <- colnames(train_var1[, -53])  # remove the classe column
+test <- test[train_variables_1]
+dim(test)
+```
+
+
+<h1>Partitioning the training data</h1>
+ 
+```{r}
+intrain <- createDataPartition(train_var1$classe, p=0.7, list=FALSE)
+train_fin <- train_var1[intrain, ]
+valid_fin <- train_var1[-intrain, ]
+dim(train_fin)
+dim(valid_fin)
+```
+
+ 
+
+
+<h1>Using basic classification tree algorithm to predict the classe</h1>
+ 
+```{r}
+modfit <- train(train_fin$classe ~ ., data = train_fin, method="rpart")
+print(modfit)
+predict_1 <- predict(modfit, newdata=valid_fin)
+print(confusionMatrix(predict_1,valid_fin$classe))
+```
+ 
+<h3>the accuracy of the prediction deteriorated further less that 50% therefore this would not be a good model to predict
+Do a check if preprocessing the data will improve the prediction results</h3>
+ 
+```{r}
+modfit_1 <- train(train_fin$classe ~ ., data = train_fin, method="rpart", preProcess=c("center", "scale"))
+print(modfit_1)
+predict_1 <- predict(modfit_1, newdata=valid_fin)
+print(confusionMatrix(predict_1,valid_fin$classe))
+```
+ 
+<h4>Preprocessing does not improve the accruacy further therfore proceeding to use other algrithms to build the model</h4>
+<h1>Random forests  to be used to build further models</h1>
+
+
+ 
+#Lines Commented for Kniting as RF take long time to process. Please see Original R code for details
+```{r}
+modfit_2 <- train(train_fin$classe ~ ., data = train_fin, method="rf", preProcess=c("center", "scale"))
+print(modfit_2)
+ predict_2 <- predict(modfit_2, newdata=valid_fin)
+ print(confusionMatrix(predict_2,valid_fin$classe))
+predict_2 <- predict(modfit_2, newdata=valid_fin)
+print(confusionMatrix(predict_2,valid_fin$classe))
+ print(plot(varImp(modfit_2, scale = FALSE)))
+```
+Applying the model to the final test data for 20 cases
+Run against 20 testing set provided by Professor Leek.
+```{r}
+print(predict(modfit_2, newdata=test))
+Results <- data.frame(predicted=predict(modfit_2, newdata=test))
+print(Results)
+```
+
+<h1>Conclusion:</h1>
+</h3>
+Based on the RF model the test cases have been predicted as above.The accuracy for the RF model is relatively higher and would certainly provide more accurate results
+Additional Analysis and further explanation:
+I would like to have done additional exploratory data analysis to reduce the number of predictors down further. PCA- Principal component analysis as well as using concepts from Regularized regression and combining predictor chapter.</h3>
+
+
+```{r pressure, echo=FALSE}
+ 
+```
+ 
